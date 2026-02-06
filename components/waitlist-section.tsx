@@ -1,5 +1,4 @@
 "use client"
-
 import { useState, type FormEvent } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -14,20 +13,38 @@ export function WaitlistSection() {
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
-
     if (!email || !email.includes("@")) return
 
     setLoading(true)
 
-    // Simulate async submission — replace with real handler
-    await new Promise((resolve) => setTimeout(resolve, 600))
+    try {
+      // Netlify'a POST gönder
+      const response = await fetch('/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          'form-name': 'waitlist',
+          'email': email
+        }).toString()
+      })
 
-    setLoading(false)
-    setSubmitted(true)
-    toast({
-      title: "You're on the list.",
-      description: "We'll notify you when we launch.",
-    })
+      if (!response.ok) throw new Error('Failed to submit')
+
+      setSubmitted(true)
+      setEmail('')
+      toast({
+        title: "You're on the list.",
+        description: "We'll notify you when we launch.",
+      })
+    } catch (error) {
+      toast({
+        title: "Something went wrong",
+        description: "Please try again later.",
+        variant: "destructive"
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -48,6 +65,11 @@ export function WaitlistSection() {
             Be the first to know when we launch. No spam. Unsubscribe anytime.
           </p>
 
+          {/* Hidden form - Netlify build için */}
+          <form name="waitlist" data-netlify="true" hidden>
+            <input name="email" type="email" />
+          </form>
+
           {submitted ? (
             <div className="mt-10 flex flex-col items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
@@ -62,13 +84,9 @@ export function WaitlistSection() {
             </div>
           ) : (
             <form
-              name="waitlist"
-              method="POST"
-              data-netlify="true"
               onSubmit={handleSubmit}
               className="mt-10 flex flex-col gap-3 sm:flex-row"
             >
-              <input type="hidden" name="form-name" value="waitlist" />
               <label htmlFor="waitlist-email" className="sr-only">
                 Email address
               </label>
@@ -76,7 +94,7 @@ export function WaitlistSection() {
                 id="waitlist-email"
                 type="email"
                 name="email"
-                placeholder="you@company.com"
+                placeholder="hello@xeeniq.com"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -92,7 +110,6 @@ export function WaitlistSection() {
               </Button>
             </form>
           )}
-
           <p
             id="waitlist-privacy"
             className="mt-4 text-xs text-muted-foreground"
